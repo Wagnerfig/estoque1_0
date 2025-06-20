@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque Interno</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    keyframes: {
+                        slideInRight: {
+                            '0%': { transform: 'translateX(10px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' }
+                        }
+                    },
+                    animation: {
+                        slideInRight: 'slideInRight 0.3s ease-out'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .item-row:hover {
+            transition: background-color 0.2s ease;
+        }
+        .auth-container {
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 28rem;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .form-toggle {
+            color: #3b82f6;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .form-toggle:hover {
+            color: #2563eb;
+        }
+        .hidden {
+            display: none;
+        }
+        
+        /* Dark mode toggle switch */
+        .dark-mode-toggle {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+            width: 3.5rem;
+            height: 2rem;
+            background-color: #d1d5db;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .dark .dark-mode-toggle {
+            background-color: #4b5563;
+        }
+        .dark-mode-toggle-handle {
+            position: absolute;
+            left: 0.25rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            background-color: #fff;
+            border-radius: 9999px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transform: translateX(0);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .dark .dark-mode-toggle-handle {
+            transform: translateX(1.5rem);
+            background-color: #f3f4f6;
+        }
+        .dark-mode-toggle-moon,
+        .dark-mode-toggle-sun {
+            font-size: 0.75rem;
+            transition: opacity 0.3s ease;
+        }
+        .dark-mode-toggle-moon {
+            color: #60a5fa;
+            opacity: 0;
+        }
+        .dark .dark-mode-toggle-moon {
+            opacity: 1;
+        }
+        .dark-mode-toggle-sun {
+            color: #f59e0b;
+            opacity: 1;
+        }
+        .dark .dark-mode-toggle-sun {
+            opacity: 0;
+        }
+        
+        /* Dashboard cards */
+        .dashboard-card {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .dark .dashboard-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* CSV importer styles */
+        .csv-dropzone {
+            border: 2px dashed #cbd5e0;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .csv-dropzone:hover {
+            border-color: #93c5fd;
+            background-color: #f8fafc;
+        }
+        .dark .csv-dropzone {
+            border-color: #475569;
+        }
+        .dark .csv-dropzone:hover {
+            background-color: #1e293b;
+            border-color: #60a5fa;
+        }
+        .csv-preview {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .csv-preview table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .csv-preview th, .csv-preview td {
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .dark .csv-preview th, .dark .csv-preview td {
+            border-color: #475569;
+        }
+        .csv-mapping-select {
+            min-width: 150px;
+        }
+        
+        /* Export button animation */
+        .export-btn {
+            transition: all 0.2s ease;
+        }
+        .export-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Price badge */
+        .price-badge {
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        /* Movement history styles */
+        .movement-card {
+            transition: all 0.2s ease;
+        }
+        .movement-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .movement-entry {
+            animation: slideInRight 0.3s ease-out;
+        }
+        .movement-in {
+            border-left: 4px solid #10b981;
+        }
+        .movement-out {
+            border-left: 4px solid #ef4444;
+        }
+        .movement-adjustment {
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen dark:bg-gray-900">
+    <!-- Dark Mode Toggle -->
+    <div class="fixed top-4 right-4 z-50">
+        <div class="flex items-center">
+            <button id="darkModeToggle" class="dark-mode-toggle mr-2">
+                <span class="dark-mode-toggle-handle">
+                    <i class="fas fa-sun dark-mode-toggle-sun"></i>
+                    <i class="fas fa-moon dark-mode-toggle-moon"></i>
+                </span>
+            </button>
+            <span id="darkModeLabel" class="text-gray-700 dark:text-gray-300 text-sm">
+                Modo Escuro
+            </span>
+        </div>
+    </div>
+
+    <!-- Auth Container (Login/Register) -->
+    <div id="authContainer" class="auth-container">
+        <div class="auth-card bg-white dark:bg-gray-800 shadow-lg">
+            <!-- Login Form -->
+            <div id="loginForm">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800 dark:text-white flex items-center justify-center">
+                        <i class="fas fa-boxes mr-3 text-blue-500"></i> Estoque Interno
+                    </h1>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">Faça login para acessar o sistema</p>
+                </div>
+                
+                <form id="loginFormElement">
+                    <div class="mb-4">
+                        <label for="loginEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail*</label>
+                        <input type="email" id="loginEmail" required
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div class="mb-6">
+                        <label for="loginPassword", class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Senha*</label>
+                        <input type="password" id="loginPassword" required
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div class="flex flex-col space-y-3">
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            Entrar
+                        </button>
+                        <p class="text-center text-sm text-gray-500 dark:text-gray-400">
+                            Não tem uma conta? 
+                            <span id="showRegisterForm" class="form-toggle">Cadastre-se</span>
+                        </p>
+                    </div>
+                </form>
+            </div>
+                
+            <!-- Register Form -->
+            <div id="registerForm" class="hidden">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800 dark:text-white flex items-center justify-center">
+                        <i class="fas fa-boxes mr-3 text-blue-500"></i> Estoque Interno
+                    </h1>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">Crie sua conta para começar</p>
+                </div>
+                
+                <form id="registerFormElement">
+                    <div class="mb-4">
+                        <label for="registerName", class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome Completo*</label>
+                        <input type="text" id="registerName" required
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div class="mb-4">
+                        <label for="registerEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail*</label>
+                        <input type="email" id="registerEmail" required
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div class="mb-4">
+                        <label for="registerPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Senha*</label>
+                        <input type="password" id="registerPassword" required
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div class="mb-6">
+                        <label for="registerConfirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirmar Senha*</label>
+                        <input type="password" id="registerConfirmPassword" required
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div class="flex flex-col space-y-3">
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            Cadastrar
+                        </button>
+                        <p class="text-center text-sm text-gray-500 dark:text-gray-400">
+                            Já tem uma conta? 
+                            <span id="showLoginForm" class="form-toggle">Faça login</span>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="appContainer" class="hidden">
+        <div class="container mx-auto px-4 py-8 max-w-7xl">
+            <header class="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+                        <i class="fas fa-boxes mr-3 text-blue-500"></i> Estoque Interno
+                    </h1>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">Gerencie seus itens de estoque de forma simples e eficiente</p>
+                </div>
+                <div class="flex items-center">
+                    <button id="exportCsvBtn" class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white flex items-center mr-4 export-btn">
+                        <i class="fas fa-file-export mr-2"></i> Exportar CSV
+                    </button>
+                    <button id="importCsvBtn" class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white flex items-center mr-4">
+                        <i class="fas fa-file-import mr-2"></i> Importar CSV
+                    </button>
+                    <button id="deleteAllBtn" class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white flex items-center mr-4">
+                        <i class="fas fa-trash-alt mr-2"></i> Apagar Tudo
+                    </button>
+                    <button id="logoutBtn" class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Sair
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                <!-- Total Items Card -->
+                <div class="dashboard-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 mr-4">
+                        <i class="fas fa-boxes text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">Itens no Estoque</p>
+                        <h3 id="totalItemsCount" class="text-2xl font-bold text-gray-800 dark:text-white">0</h3>
+                    </div>
+                </div>
+                
+                <!-- Low Stock Items Card -->
+                <div class="dashboard-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 mr-4">
+                        <i class="fas fa-exclamation-triangle text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">Itens com Baixo Estoque</p>
+                        <h3 id="lowStockItemsCount" class="text-2xl font-bold text-gray-800 dark:text-white">0</h3>
+                    </div>
+                </div>
+                
+                <!-- Total Quantity Card -->
+                <div class="dashboard-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 mr-4">
+                        <i class="fas fa-layer-group text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">Quantidade Total</p>
+                        <h3 id="totalQuantityCount", class="text-2xl font-bold text-gray-800 dark:text-white">0</h3>
+                    </div>
+                </div>
+                
+                <!-- Categories Card -->
+                <div class="dashboard-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 mr-4">
+                        <i class="fas fa-tags text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">Categorias</p>
+                        <h3 id="categoriesCount" class="text-2xl font-bold text-gray-800 dark:text-white">0</h3>
+                    </div>
+                </div>
+                
+                <!-- Total Value Card -->
+                <div class="dashboard-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center">
+                    <div class="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 mr-4">
+                        <i class="fas fa-dollar-sign text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">Valor Total</p>
+                        <h3 id="totalValueCount" class="text-2xl font-bold text-gray-800 dark:text-white">R$ 0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price Categories Section -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <!-- Low Price Items -->
+                <div class="dashboard-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+                    <div class="flex items-center mb-2">
+                        <div class="p-2 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 mr-3">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800 dark:text-white">Itens de Baixo Valor</h3>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm mb-2">Itens com valor até R$ 50,00</p>
+                    <div class="flex justify-between items-center">
+                        <span id="lowPriceItemsCount" class="text-xl font-bold text-gray-800 dark:text-white">0</span>
+                        <span id="lowPriceItemsValue" class="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm">R$ 0</span>
+                    </div>
+                </div>
+                
+                <!-- Medium Price Items -->
+                <div class="dashboard-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+                    <div class="flex items-center mb-2">
+                        <div class="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 mr-3">
+                            <i class="fas fa-equals"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800 dark:text-white">Itens de Valor Médio</h3>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm mb-2">Itens entre R$ 50,01 e R$ 200,00</p>
+                    <div class="flex justify-between items-center">
+                        <span id="mediumPriceItemsCount" class="text-xl font-bold text-gray-800 dark:text-white">0</span>
+                        <span id="mediumPriceItemsValue" class="px-3 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-sm">R$ 0</span>
+                    </div>
+                </div>
+                
+                <!-- High Price Items -->
+                <div class="dashboard-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+                    <div class="flex items-center mb-2">
+                        <div class="p-2 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 mr-3">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800 dark:text-white">Itens de Alto Valor</h3>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm mb-2">Itens acima de R$ 200,00</p>
+                    <div class="flex justify-between items-center">
+                        <span id="highPriceItemsCount" class="text-xl font-bold text-gray-800 dark:text-white">0</span>
+                        <span id="highPriceItemsValue" class="px-3 py-1 rounded-full bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-sm">R$ 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Section -->
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Items Table Section -->
+                <div class="flex-1">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-4">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                            <div class="relative flex-grow">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                <input type="text" id="searchInput" placeholder="Buscar itens..."
+                                          class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+                            <button id="addItemBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-colors">
+                                <i class="fas fa-plus mr-2"></i> Adicionar Item
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Item</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Código</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantidade</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Preço</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Localização</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsTable" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    <!-- Items will be added here dynamically -->
+                                </tbody>
+                            </table>
+                            <div id="emptyState" class="text-center py-12">
+                                <i class="fas fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-500 dark:text-gray-400">Nenhum item no estoque</h3>
+                                <p class="text-gray-400 dark:text-gray-500 mt-1">Adicione seu primeiro item clinando no botão acima</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Movement History Section -->
+                <div class="lg:w-96">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-semibold text-gray-800 dark:text-white">
+                                <i class="fas fa-history mr-3 text-blue-500"></i> Histórico de Movimentações
+                            </h3>
+                            <button id="filterMovementsBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <i class="fas fa-filter"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Movement Filters (hidden by default) -->
+                        <div id="movementFilters" class="hidden mb-4 space-y-2">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="filterIn" class="mr-2" checked>
+                                <label for="filterIn" class="text-sm text-gray-700 dark:text-gray-300">Entradas</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="filterOut" class="mr-2" checked>
+                                <label for="filterOut" class="text-sm text-gray-700 dark:text-gray-300">Saídas</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="filterAdjustments" class="mr-2" checked>
+                                <label for="filterAdjustments" class="text-sm text-gray-700 dark:text-gray-300">Ajustes</label>
+                            </div>
+                        </div>
+                        
+                        <div id="movementsList" class="space-y-3 max-h-96 overflow-y-auto">
+                            <div class="text-center py-8 text-gray-400 dark:text-gray-500">
+                                <i class="fas fa-box-open text-2xl mb-2"></i>
+                                <p>Nenhuma movimentação registrada</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
+                <p>Estoque Interno v1.0 • © 2023</p>
+            </div>
+        </div>
+                
+        <!-- Add/Edit Item Modal -->
+        <div id="itemModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md fade-in">
+                <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white" id="modalTitle">Adicionar Novo Item</h3>
+                    <button id="closeModalBtn" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="itemForm">
+                        <input type="hidden" id="editItemId">
+                        <div class="mb-4">
+                            <label for="itemName", class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Item*</label>
+                            <input type="text" id="itemName" required
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div class="mb-4">
+                            <label for="itemCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Código*</label>
+                            <input type="text" id="itemCode" required
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div class="mb-4">
+                            <label for="itemQuantity", class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quantidade*</label>
+                            <input type="number" id="itemQuantity" min="0" required
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div class="mb-4">
+                            <label for="itemPrice", class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Preço Unitário (R$)</label>
+                            <input type="number" id="itemPrice" min="0" step="0.01"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div class="mb-6">
+                            <label for="itemLocation", class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Localização</label>
+                            <input type="text" id="itemLocation"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancelBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="saveItemBtn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                Salvar Item
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+                
+        <!-- Confirm Movement Modal -->
+        <div id="movementModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md fade-in">
+                <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Registrar Movimentação</h3>
+                    <button id="closeMovementModalBtn" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="movementForm">
+                        <input type="hidden" id="movementItemId">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Movimentação</label>
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input type="radio" id="movementTypeIn" name="movementType" value="in" class="mr-2" checked>
+                                    <label for="movementTypeIn" class="text-gray-700 dark:text-gray-300">Entrada</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" id="movementTypeOut" name="movementType" value="out" class="mr-2">
+                                    <label for="movementTypeOut" class="text-gray-700 dark:text-gray-300">Saída</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" id="movementTypeAdjustment" name="movementType" value="adjustment" class="mr-2">
+                                    <label for="movementTypeAdjustment" class="text-gray-700 dark:text-gray-300">Ajuste de Estoque</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="movementQuantity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quantidade*</label>
+                            <input type="number" id="movementQuantity" min="0" required
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div class="mb-6">
+                            <label for="movementNotes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observações</label>
+                            <textarea id="movementNotes" rows="3"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancelMovementBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="confirmMovementBtn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                Registrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+                
+        <!-- CSV Import Modal -->
+        <div id="csvImportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl fade-in">
+                <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Importar Itens de CSV</h3>
+                    <button id="closeCsvModalBtn" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <div id="csvDropzone" class="csv-dropzone bg-gray-50 dark:bg-gray-700">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fas fa-file-csv text-4xl text-blue-500 mb-3"></i>
+                                <p class="text-gray-700 dark:text-gray-300 font-medium">Arraste e solte seu arquivo CSV aqui</p>
+                                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">ou clique para selecionar</p>
+                                <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+                            </div>
+                        </div>
+                        <p id="csvFileName" class="text-sm text-gray-500 dark:text-gray-400 mt-2 hidden"></p>
+                    </div>
+                                                                
+                    <div id="csvMappingSection" class="hidden">
+                        <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">Mapeamento de Colunas</h4>
+                        <div class="overflow-x-auto mb-6">
+                            <div class="csv-preview bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
+                                <table id="csvPreviewTable" class="w-full">
+                                    <thead>
+                                        <tr id="csvHeadersRow"></tr>
+                                    </thead>
+                                    <tbody id="csvPreviewBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                                                                
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Item</label>
+                                <select id="nameMapping" class="csv-mapping-select w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">Selecione a coluna</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Código</label>
+                                <select id="codeMapping" class="csv-mapping-select w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">Selecione a coluna</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quantidade</label>
+                                <select id="quantityMapping" class="csv-mapping-select w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">Selecione a coluna</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Preço</label>
+                                <select id="priceMapping" class="csv-mapping-select w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">Selecione a coluna</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Localização</label>
+                                <select id="locationMapping" class="csv-mapping-select w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">Selecione a coluna</option>
+                                </select>
+                            </div>
+                        </div>
+                                                                
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancelCsvImportBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-7O0 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="button" id="confirmCsvImportBtn", class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                Importar Itens
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                
+        <!-- Confirmation Modal -->
+        <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md fade-in">
+                <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white" id="confirmModalTitle">Confirmar Exclusão</h3>
+                    <button id="closeConfirmModalBtn" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-700 dark:text-gray-300 mb-6" id="confirmModalMessage">Tem certeza que deseja remover este item do estoque?</p>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button", id="cancelDeleteBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="button" id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
+                            Excluir Item
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+                
+        <!-- Delete All Confirmation Modal -->
+        <div id="deleteAllModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md fade-in">
+                <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Confirmar Exclusão Total</h3>
+                    <button id="closeDeleteAllModalBtn" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-700 dark:text-gray-300 mb-6">Tem certeza que deseja remover TODOS os itens do estoque? Esta ação não pode ser desfeita.</p>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancelDeleteAllBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="button" id="confirmDeleteAllBtn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
+                            Excluir Tudo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Dark mode functionality
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const darkModeLabel = document.getElementById('darkModeLabel');
+            const htmlElement = document.documentElement;
+            
+            // Check for saved user preference or system preference
+            const savedMode = localStorage.getItem('darkMode');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedMode === 'dark' || (!savedMode && systemPrefersDark)) {
+                htmlElement.classList.add('dark');
+                darkModeLabel.textContent = 'Modo Claro';
+            } else {
+                darkModeLabel.textContent = 'Modo Escuro';
+            }
+            
+            // Toggle dark mode
+            darkModeToggle.addEventListener('click', function() {
+                htmlElement.classList.toggle('dark');
+                const isDarkMode = htmlElement.classList.contains('dark');
+                                
+                if (isDarkMode) {
+                    localStorage.setItem('darkMode', 'dark');
+                    darkModeLabel.textContent = 'Modo Claro';
+                } else {
+                    localStorage.setItem('darkMode', 'light');
+                    darkModeLabel.textContent = 'Modo Escuro';
+                }
+            });
+
+            // Database setup
+            const dbName = 'EstoqueDB';
+            const dbVersion = 5; // Updated version for movement history
+            const storeName = 'items';
+            const userStoreName = 'users';
+            const movementsStoreName = 'movements';
+            
+            let db;
+            let items = [];
+            let movements = [];
+            let itemToDelete = null;
+            let currentUser = null;
+            let csvData = null;
+            let csvHeaders = [];
+
+            // DOM Elements
+            const authContainer = document.getElementById('authContainer');
+            const appContainer = document.getElementById('appContainer');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginFormElement = document.getElementById('loginFormElement');
+            const registerFormElement = document.getElementById('registerFormElement');
+            const showRegisterForm = document.getElementById('showRegisterForm');
+            const showLoginForm = document.getElementById('showLoginForm');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const deleteAllBtn = document.getElementById('deleteAllBtn');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            const itemsTable = document.getElementById('itemsTable');
+            const emptyState = document.getElementById('emptyState');
+            const addItemBtn = document.getElementById('addItemBtn');
+            const itemModal = document.getElementById('itemModal');
+            const movementModal = document.getElementById('movementModal');
+            const confirmModal = document.getElementById('confirmModal');
+            const deleteAllModal = document.getElementById('deleteAllModal');
+            const itemForm = document.getElementById('itemForm');
+            const movementForm = document.getElementById('movementForm');
+            const searchInput = document.getElementById('searchInput');
+            const importCsvBtn = document.getElementById('importCsvBtn');
+            const csvImportModal = document.getElementById('csvImportModal');
+            const csvDropzone = document.getElementById('csvDropzone');
+            const csvFileInput = document.getElementById('csvFileInput');
+            const csvFileName = document.getElementById('csvFileName');
+            const csvMappingSection = document.getElementById('csvMappingSection');
+            const csvPreviewTable = document.getElementById('csvPreviewTable');
+            const csvHeadersRow = document.getElementById('csvHeadersRow');
+            const csvPreviewBody = document.getElementById('csvPreviewBody');
+            const nameMapping = document.getElementById('nameMapping');
+            const codeMapping = document.getElementById('codeMapping');
+            const quantityMapping = document.getElementById('quantityMapping');
+            const priceMapping = document.getElementById('priceMapping');
+            const locationMapping = document.getElementById('locationMapping');
+            const cancelCsvImportBtn = document.getElementById('cancelCsvImportBtn');
+            const confirmCsvImportBtn = document.getElementById('confirmCsvImportBtn');
+            const closeCsvModalBtn = document.getElementById('closeCsvModalBtn');
+            const movementsList = document.getElementById('movementsList');
+            const filterMovementsBtn = document.getElementById('filterMovementsBtn');
+            const movementFilters = document.getElementById('movementFilters');
+            
+            // Dashboard elements
+            const totalItemsCount = document.getElementById('totalItemsCount');
+            const lowStockItemsCount = document.getElementById('lowStockItemsCount');
+            const totalQuantityCount = document.getElementById('totalQuantityCount');
+            const categoriesCount = document.getElementById('categoriesCount');
+            const totalValueCount = document.getElementById('totalValueCount');
+            
+            // Price category elements
+            const lowPriceItemsCount = document.getElementById('lowPriceItemsCount');
+            const lowPriceItemsValue = document.getElementById('lowPriceItemsValue');
+            const mediumPriceItemsCount = document.getElementById('mediumPriceItemsCount');
+            const mediumPriceItemsValue = document.getElementById('mediumPriceItemsValue');
+            const highPriceItemsCount = document.getElementById('highPriceItemsCount');
+            const highPriceItemsValue = document.getElementById('highPriceItemsValue');
+
+            // Open or create database
+            const request = indexedDB.open(dbName, dbVersion);
+
+            request.onupgradeneeded = function(event) {
+                const db = event.target.result;
+                const oldVersion = event.oldVersion;
+                
+                // Create items store if it doesn't exist
+                if (!db.objectStoreNames.contains(storeName)) {
+                    const store = db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('name', 'name', { unique: false });
+                    store.createIndex('code', 'code', { unique: true });
+                    store.createIndex('quantity', 'quantity', { unique: false });
+                    store.createIndex('price', 'price', { unique: false });
+                    store.createIndex('location', 'location', { unique: false });
+                    store.createIndex('userId', 'userId', { unique: false });
+                    
+                    // Add some initial data if empty
+                    store.add({ name: 'Monitor 24"', code: 'MON-001', quantity: 15, price: 899.99, location: 'Prateleira A1', userId: 'demo' });
+                    store.add({ name: 'Teclado sem fio', code: 'TEC-002', quantity: 32, price: 149.50, location: 'Prateleira B2', userId: 'demo' });
+                    store.add({ name: 'Mouse óptico', code: 'MOU-003', quantity: 45, price: 49.90, location: 'Prateleira C3', userId: 'demo' });
+                } else if (oldVersion < 2) {
+                    // If upgrading from version 1, add userId index
+                    const transaction = event.target.transaction;
+                    const store = transaction.objectStore(storeName);
+                    store.createIndex('userId', 'userId', { unique: false });
+                } else if (oldVersion < 4) {
+                    // If upgrading from version 3, add price field
+                    const transaction = event.target.transaction;
+                    const store = transaction.objectStore(storeName);
+                    const request = store.getAll();
+                    
+                    request.onsuccess = function() {
+                        request.result.forEach(item => {
+                            if (item.price === undefined) {
+                                item.price = 0;
+                                store.put(item);
+                            }
+                        });
+                    };
+                }
+                
+                // Create users store if it doesn't exist
+                if (!db.objectStoreNames.contains(userStoreName)) {
+                    const userStore = db.createObjectStore(userStoreName, { keyPath: 'email' });
+                    userStore.createIndex('name', 'name', { unique: false });
+                    
+                    // Add demo user
+                    userStore.add({
+                        name: 'Usuário Demo',
+                        email: 'demo@estoque.com',
+                        password: 'demo123' // In a real app, this should be hashed
+                    });
+                }
+                
+                // Create movements store if it doesn't exist (version 5+)
+                if (!db.objectStoreNames.contains(movementsStoreName)) {
+                    const movementsStore = db.createObjectStore(movementsStoreName, { keyPath: 'id', autoIncrement: true });
+                    movementsStore.createIndex('itemId', 'itemId', { unique: false });
+                    movementsStore.createIndex('type', 'type', { unique: false });
+                    movementsStore.createIndex('date', 'date', { unique: false });
+                    movementsStore.createIndex('userId', 'userId', { unique: false });
+                    
+                    // Create indexes for filtering and sorting
+                    movementsStore.createIndex('itemId_type_date', ['itemId', 'type', 'date'], { unique: false });
+                    movementsStore.createIndex('type_date', ['type', 'date'], { unique: false });
+                }
+            };
+
+            request.onsuccess = function(event) {
+                db = event.target.result;
+                
+                // Check if user is already logged in (from session)
+                const loggedInUser = sessionStorage.getItem('currentUser');
+                if (loggedInUser) {
+                    currentUser = JSON.parse(loggedInUser);
+                    showApp();
+                } else {
+                    showAuth();
+                }
+            };
+
+            request.onerror = function(event) {
+                console.error('Database error:', event.target.error);
+                alert('Erro ao acessar o banco de dados. Por favor, recarregue a página.');
+            };
+
+            // Toggle between login and register forms
+            showRegisterForm.addEventListener('click', function(e) {
+                e.preventDefault();
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+            });
+
+            showLoginForm.addEventListener('click', function(e) {
+                e.preventDefault();
+                registerForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+            });
+
+            // Login form submission
+            loginFormElement.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+
+                const transaction = db.transaction(userStoreName, 'readonly');
+                const store = transaction.objectStore(userStoreName);
+                const request = store.get(email);
+
+                request.onsuccess = function() {
+                    const user = request.result;
+                    if (user && user.password === password) {
+                        currentUser = {
+                            name: user.name,
+                            email: user.email
+                        };
+                                                
+                        // Store user in session
+                        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                                
+                        showApp();
+                    } else {
+                        alert('E-mail ou senha incorretos.');
+                    }
+                };
+
+                request.onerror = function() {
+                    alert('Erro ao fazer login. Tente novamente.');
+                };
+            });
+
+            // Register form submission
+            registerFormElement.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('registerName').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+                if (password !== confirmPassword) {
+                    alert('As senhas não coincidem.');
+                    return;
+                }
+
+                const transaction = db.transaction(userStoreName, 'readwrite');
+                const store = transaction.objectStore(userStoreName);
+                const request = store.get(email);
+
+                request.onsuccess = function() {
+                    if (request.result) {
+                        alert('Este e-mail já está cadastrado.');
+                    } else {
+                        const newUser = {
+                            name: name,
+                            email: email,
+                            password: password // In a real app, this should be hashed
+                        };
+                                                
+                        const addRequest = store.add(newUser);
+                                                
+                        addRequest.onsuccess = function() {
+                            alert('Cadastro realizado com sucesso! Faça login para continuar.');
+                            registerForm.classList.add('hidden');
+                            loginForm.classList.remove('hidden');
+                            document.getElementById('loginEmail').value = email;
+                            document.getElementById('loginPassword').value = '';
+                            document.getElementById('registerFormElement').reset();
+                        };
+                                                
+                        addRequest.onerror = function() {
+                            alert('Erro ao cadastrar usuário. Tente novamente.');
+                        };
+                    }
+                };
+
+                request.onerror = function() {
+                    alert('Erro ao verificar usuário. Tente novamente.');
+                };
+            });
+
+            // Logout
+            logoutBtn.addEventListener('click', function() {
+                sessionStorage.removeItem('currentUser');
+                currentUser = null;
+                showAuth();
+            });
+
+            // Delete all items
+            deleteAllBtn.addEventListener('click', function() {
+                if (items.length === 0) {
+                    alert('Não há itens para excluir.');
+                    return;
+                }
+                deleteAllModal.classList.remove('hidden');
+            });
+
+            // Export items to CSV
+            exportCsvBtn.addEventListener('click', function() {
+                if (items.length === 0) {
+                    alert('Não há itens para exportar.');
+                    return;
+                }
+                                
+                // Create CSV content
+                let csvContent = "Nome,Código,Quantidade,Preço,Localização\n";
+                                
+                items.forEach(item => {
+                    csvContent += `"${item.name}","${item.code}",${item.quantity},${item.price || 0},"${item.location || ''}"\n`;
+                });
+                                
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `estoque_${new Date().toISOString().slice(0, 10)}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                                
+                // Show success message with animation
+                const originalText = exportCsvBtn.innerHTML;
+                exportCsvBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Exportado!';
+                exportCsvBtn.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
+                                
+                setTimeout(() => {
+                    exportCsvBtn.innerHTML = originalText;
+                    exportCsvBtn.classList.remove('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
+                }, 2000);
+            });
+
+            // Confirm delete all items
+            document.getElementById('confirmDeleteAllBtn').addEventListener('click', function() {
+                const transaction = db.transaction([storeName, movementsStoreName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const movementsStore = transaction.objectStore(movementsStoreName);
+
+                // Get all items for current user
+                const request = store.getAll();
+
+                request.onsuccess = function() {
+                    const userItems = request.result.filter(item => item.userId === currentUser.email);
+                                        
+                    // Delete each item
+                    userItems.forEach(item => {
+                        store.delete(item.id);
+                        
+                        // Also delete related movements
+                        const indexRequest = movementsStore.index('itemId').openCursor(item.id);
+                        indexRequest.onsuccess = function(event) {
+                            const cursor = event.target.result;
+                            if (cursor) {
+                                movementsStore.delete(cursor.primaryKey);
+                                cursor.continue();
+                            }
+                        };
+                    });
+                                        
+                    transaction.oncomplete = function() {
+                        loadItems();
+                        loadMovementHistory();
+                        deleteAllModal.classList.add('hidden');
+                        alert('Todos os itens foram removidos com sucesso.');
+                    };
+                                        
+                    transaction.onerror = function() {
+                        console.error('Error deleting items:', transaction.error);
+                        alert('Ocorreu um erro ao excluir os itens.');
+                    };
+                };
+            });
+
+            // Close delete all modal
+            document.getElementById('closeDeleteAllModalBtn').addEventListener('click', function() {
+                deleteAllModal.classList.add('hidden');
+            });
+
+            document.getElementById('cancelDeleteAllBtn').addEventListener('click', function() {
+                deleteAllModal.classList.add('hidden');
+            });
+
+            // Show authentication forms
+            function showAuth() {
+                authContainer.classList.remove('hidden');
+                appContainer.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                document.getElementById('loginFormElement').reset();
+                document.getElementById('registerFormElement').reset();
+            }
+
+            // Show main application
+            function showApp() {
+                authContainer.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                loadItems();
+                loadMovementHistory();
+            }
+
+            // Load all items from database for current user
+            function loadItems() {
+                const transaction = db.transaction(storeName, 'readonly');
+                const store = transaction.objectStore(storeName);
+                
+                // Get all items and filter by userId
+                const request = store.getAll();
+
+                request.onsuccess = function() {
+                    // Filter items by current user's email
+                    items = request.result.filter(item => item.userId === currentUser.email);
+                    updateDashboard();
+                    renderItems();
+                };
+
+                request.onerror = function() {
+                    console.error('Error loading items:', request.error);
+                };
+            }
+                                    
+            // Load movement history from database
+            function loadMovementHistory(filters = {}) {
+                const transaction = db.transaction(movementsStoreName, 'readonly');
+                const store = transaction.objectStore(movementsStoreName);
+                
+                // Get all movements for current user
+                const request = store.index('userId').openCursor(currentUser.email);
+                movements = [];
+                
+                request.onsuccess = function(event) {
+                    const cursor = event.target.result;
+                    if (cursor) {
+                        movements.push(cursor.value);
+                        cursor.continue();
+                    } else {
+                        // Sort by most recent first
+                        movements.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        
+                        // Apply filters
+                        let filteredMovements = movements;
+                        if (filters.in !== undefined) {
+                            filteredMovements = filteredMovements.filter(m => filters.in || m.type !== 'in');
+                        }
+                        if (filters.out !== undefined) {
+                            filteredMovements = filteredMovements.filter(m => filters.out || m.type !== 'out');
+                        }
+                        if (filters.adjustments !== undefined) {
+                            filteredMovements = filteredMovements.filter(m => filters.adjustments || m.type !== 'adjustment');
+                        }
+                        
+                        renderMovementHistory(filteredMovements);
+                    }
+                };
+                
+                request.onerror = function() {
+                    console.error('Error loading movements:', request.error);
+                };
+            }
+
+            // Update dashboard statistics
+            function updateDashboard() {
+                // Total items count
+                totalItemsCount.textContent = items.length;
+                
+                // Low stock items (quantity < 10)
+                const lowStockItems = items.filter(item => item.quantity < 10);
+                lowStockItemsCount.textContent = lowStockItems.length;
+                
+                // Total quantity
+                const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+                totalQuantityCount.textContent = totalQuantity;
+                
+                // Categories count (simple implementation - in a real app you might have categories)
+                const uniqueCategories = new Set(items.map(item => item.name.split(' ')[0]));
+                categoriesCount.textContent = uniqueCategories.size;
+                
+                // Price statistics
+                const totalValue = items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+                totalValueCount.textContent = `R$ ${totalValue.toFixed(2)}`;
+                
+                // Calculate price categories
+                const lowPriceLimit = 50;
+                const highPriceLimit = 200;
+                
+                // Low price items (<= R$50)
+                const lowPriceItems = items.filter(item => item.price <= lowPriceLimit);
+                const lowPriceItemsSum = lowPriceItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+                lowPriceItemsCount.textContent = lowPriceItems.length;
+                lowPriceItemsValue.textContent = `R$ ${lowPriceItemsSum.toFixed(2)}`;
+                
+                // Medium price items (> R$50 and <= R$200)
+                const mediumPriceItems = items.filter(item => item.price > lowPriceLimit && item.price <= highPriceLimit);
+                const mediumPriceItemsSum = mediumPriceItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+                mediumPriceItemsCount.textContent = mediumPriceItems.length;
+                mediumPriceItemsValue.textContent = `R$ ${mediumPriceItemsSum.toFixed(2)}`;
+                
+                // High price items (> R$200)
+                const highPriceItems = items.filter(item => item.price > highPriceLimit);
+                const highPriceItemsSum = highPriceItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+                highPriceItemsCount.textContent = highPriceItems.length;
+                highPriceItemsValue.textContent = `R$ ${highPriceItemsSum.toFixed(2)}`;
+            }
+
+            // Show/hide empty state
+            function checkEmptyState() {
+                if (items.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    itemsTable.classList.add('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                    itemsTable.classList.remove('hidden');
+                }
+            }
+
+            // Render items in the table
+            function renderItems(filteredItems = null) {
+                const itemsToRender = filteredItems || items;
+                itemsTable.innerHTML = '';
+                                
+                itemsToRender.forEach(item => {
+                    const totalValue = (item.price || 0) * item.quantity;
+                    const formattedPrice = item.price ? `R$ ${item.price.toFixed(2)}` : 'R$ 0,00';
+                                        
+                    const row = document.createElement('tr');
+                    row.className = 'item-row hover:bg-gray-100 dark:hover:bg-gray-700';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${item.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${item.code}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item.quantity < 10 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}">
+                                ${item.quantity}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            <span class="price-badge px-2 py-1 inline-flex rounded-md ${totalValue < 100 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : totalValue < 500 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}">
+                                ${formattedPrice}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${item.location || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            <button class="edit-btn mr-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300" data-id="${item.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="movement-btn mr-2 text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300" data-id="${item.id}">
+                                <i class="fas fa-exchange-alt"></i>
+                            </button>
+                            <button class="delete-btn text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" data-id="${item.id}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    itemsTable.appendChild(row);
+                });
+                                
+                // Add event listeners to edit and delete buttons
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const itemId = parseInt(this.getAttribute('data-id'));
+                        editItem(itemId);
+                    });
+                });
+                                
+                document.querySelectorAll('.movement-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const itemId = parseInt(this.getAttribute('data-id'));
+                        const item = items.find(i => i.id === itemId);
+                        if (item) {
+                            showMovementModal(item);
+                        }
+                    });
+                });
+                                
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const itemId = parseInt(this.getAttribute('data-id'));
+                        showConfirmModal(itemId);
+                    });
+                });
+                                
+                checkEmptyState();
+            }
+                                    
+            // Render movement history
+            function renderMovementHistory(movementsToRender) {
+                movementsList.innerHTML = '';
+                
+                if (movementsToRender.length === 0) {
+                    movementsList.innerHTML = `
+                        <div class="text-center py-8 text-gray-400 dark:text-gray-500">
+                            <i class="fas fa-box-open text-2xl mb-2"></i>
+                            <p>Nenhuma movimentação registrada</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                movementsToRender.forEach(movement => {
+                    const item = items.find(i => i.id === movement.itemId);
+                    const itemName = item ? item.name : 'Item não encontrado';
+                    const itemCode = item ? item.code : '';
+                    
+                    // Format date
+                    const movementDate = new Date(movement.date);
+                    const formattedDate = movementDate.toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    // Determine icon and color based on movement type
+                    let icon, bgColor, textColor;
+                    let movementTypeText = '';
+                    
+                    switch(movement.type) {
+                        case 'in':
+                            icon = 'fa-box-open';
+                            bgColor = 'bg-green-100 dark:bg-green-900';
+                            textColor = 'text-green-800 dark:text-green-200';
+                            movementTypeText = 'Entrada';
+                            break;
+                        case 'out':
+                            icon = 'fa-box';
+                            bgColor = 'bg-red-100 dark:bg-red-900';
+                            textColor = 'text-red-800 dark:text-red-200';
+                            movementTypeText = 'Saída';
+                            break;
+                        case 'adjustment':
+                            icon = 'fa-sliders-h';
+                            bgColor = 'bg-blue-100 dark:bg-blue-900';
+                            textColor = 'text-blue-800 dark:text-blue-200';
+                            movementTypeText = 'Ajuste';
+                            break;
+                    }
+                    
+                    const movementElement = document.createElement('div');
+                    movementElement.className = `movement-card movement-entry bg-white dark:bg-gray-700 rounded-lg shadow p-4 ${movement.type === 'in' ? 'movement-in' : movement.type === 'out' ? 'movement-out' : 'movement-adjustment'}`;
+                    movementElement.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-medium text-gray-800 dark:text-white">${itemName} (${itemCode})</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">${formattedDate}</p>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded-full ${bgColor} ${textColor}">
+                                ${movementTypeText}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <p class="text-gray-600 dark:text-gray-300 text-sm">
+                                Quantidade: <span class="font-medium">${movement.quantity}</span>
+                            </p>
+                            ${movement.notes ? `
+                            <p class="text-gray-500 dark:text-gray-400 text-xs truncate max-w-xs">
+                                ${movement.notes}
+                            </p>
+                            ` : ''}
+                        </div>
+                    `;
+                    movementsList.appendChild(movementElement);
+                });
+            }
+                                    
+            // Show movement modal
+            function showMovementModal(item) {
+                document.getElementById('movementItemId').value = item.id;
+                document.getElementById('movementQuantity').value = '';
+                document.getElementById('movementNotes').value = '';
+                
+                // Set max value if it's an out movement
+                const outRadio = document.getElementById('movementTypeOut');
+                outRadio.addEventListener('click', function() {
+                    document.getElementById('movementQuantity').max = item.quantity;
+                });
+                
+                movementModal.classList.remove('hidden');
+            }
+
+            // Add new item
+            addItemBtn.addEventListener('click', function() {
+                document.getElementById('modalTitle').textContent = 'Adicionar Novo Item';
+                document.getElementById('editItemId').value = '';
+                document.getElementById('itemForm').reset();
+                itemModal.classList.remove('hidden');
+            });
+                                    
+            // Edit item
+            function editItem(id) {
+                const item = items.find(item => item.id === id);
+                if (item) {
+                    document.getElementById('modalTitle').textContent = 'Editar Item';
+                    document.getElementById('editItemId').value = item.id;
+                    document.getElementById('itemName').value = item.name;
+                    document.getElementById('itemCode').value = item.code;
+                    document.getElementById('itemQuantity').value = item.quantity;
+                    document.getElementById('itemPrice').value = item.price || '';
+                    document.getElementById('itemLocation').value = item.location || '';
+                    itemModal.classList.remove('hidden');
+                }
+            }
+                                    
+            // Save item (add or edit)
+            itemForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                                
+                const itemId = document.getElementById('editItemId').value;
+                const name = document.getElementById('itemName').value;
+                const code = document.getElementById('itemCode').value;
+                const newQuantity = parseInt(document.getElementById('itemQuantity').value);
+                const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+                const location = document.getElementById('itemLocation').value;
+                
+                // Start transaction
+                const transaction = db.transaction([storeName, movementsStoreName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const movementsStore = transaction.objectStore(movementsStoreName);
+
+                if (itemId) {
+                    // Edit existing item - we need to check if quantity changed
+                    store.get(parseInt(itemId)).onsuccess = function(e) {
+                        const existingItem = e.target.result;
+                        const quantityChange = newQuantity - existingItem.quantity;
+                        
+                        // Update the item
+                        const itemData = {
+                            id: parseInt(itemId),
+                            name,
+                            code,
+                            quantity: newQuantity,
+                            price,
+                            location: location || null,
+                            userId: currentUser.email
+                        };
+                        
+                        const updateRequest = store.put(itemData);
+                        
+                        // Record movement if quantity changed
+                        if (quantityChange !== 0) {
+                            const movementData = {
+                                itemId: parseInt(itemId),
+                                type: 'adjustment',
+                                quantity: Math.abs(quantityChange),
+                                previousQuantity: existingItem.quantity,
+                                newQuantity,
+                                notes: 'Ajuste de estoque manual',
+                                date: new Date().toISOString(),
+                                userId: currentUser.email
+                            };
+                            
+                            movementsStore.add(movementData);
+                        }
+                        
+                        updateRequest.onsuccess = function() {
+                            loadItems();
+                            loadMovementHistory();
+                            itemModal.classList.add('hidden');
+                        };
+                        
+                        updateRequest.onerror = function() {
+                            console.error('Error updating item:', updateRequest.error);
+                            alert('Erro ao atualizar o item. Verifique se o código já não existe.');
+                        };
+                    };
+                } else {
+                    // Add new item
+                    const itemData = {
+                        name,
+                        code,
+                        quantity: newQuantity,
+                        price,
+                        location: location || null,
+                        userId: currentUser.email
+                    };
+                    
+                    const addRequest = store.add(itemData);
+                    
+                    // Record the initial inventory as a movement
+                    addRequest.onsuccess = function(e) {
+                        const newItemId = e.target.result;
+                        
+                        const movementData = {
+                            itemId: newItemId,
+                            type: 'in',
+                            quantity: newQuantity,
+                            notes: 'Entrada inicial no estoque',
+                            date: new Date().toISOString(),
+                            userId: currentUser.email
+                        };
+                        
+                        movementsStore.add(movementData).onsuccess = function() {
+                            loadItems();
+                            loadMovementHistory();
+                            itemModal.classList.add('hidden');
+                        };
+                    };
+                    
+                    addRequest.onerror = function() {
+                        console.error('Error adding item:', addRequest.error);
+                        alert('Erro ao adicionar o item. Verifique si el código ya existe.');
+                    };
+                }
+            });
+                                    
+            // Save movement
+            movementForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const itemId = parseInt(document.getElementById('movementItemId').value);
+                const movementType = document.querySelector('input[name="movementType"]:checked').value;
+                const quantity = parseInt(document.getElementById('movementQuantity').value);
+                const notes = document.getElementById('movementNotes').value;
+                
+                if (quantity <= 0) {
+                    alert('A quantidade deve ser maior que zero.');
+                    return;
+                }
+                
+                // Start transaction
+                const transaction = db.transaction([storeName, movementsStoreName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const movementsStore = transaction.objectStore(movementsStoreName);
+                
+                // Get the current item
+                store.get(itemId).onsuccess = function(e) {
+                    const item = e.target.result;
+                    if (!item) {
+                        alert('Item não encontrado.');
+                        return;
+                    }
+                    
+                    let newQuantity = item.quantity;
+                    
+                    // Calculate new quantity based on movement type
+                    if (movementType === 'in') {
+                        newQuantity += quantity;
+                    } else if (movementType === 'out') {
+                        if (quantity > item.quantity) {
+                            alert('Quantidade indisponível no estoque.');
+                            return;
+                        }
+                        newQuantity -= quantity;
+                    } else if (movementType === 'adjustment') {
+                        newQuantity = quantity;
+                    }
+                    
+                    // Update the item
+                    item.quantity = newQuantity;
+                    const updateRequest = store.put(item);
+                    
+                    // Record the movement
+                    const movementData = {
+                        itemId,
+                        type: movementType,
+                        quantity: movementType === 'adjustment' ? Math.abs(newQuantity - item.quantity) : quantity,
+                        previousQuantity: item.quantity,
+                        newQuantity,
+                        notes: notes || null,
+                        date: new Date().toISOString(),
+                        userId: currentUser.email
+                    };
+                    
+                    movementsStore.add(movementData);
+                    
+                    updateRequest.onsuccess = function() {
+                        loadItems();
+                        loadMovementHistory();
+                        movementModal.classList.add('hidden');
+                    };
+                    
+                    updateRequest.onerror = function() {
+                        console.error('Error updating item:', updateRequest.error);
+                        alert('Erro ao atualizar o item.');
+                    };
+                };
+            });
+            
+            // Show confirmation modal for delete
+            function showConfirmModal(id) {
+                itemToDelete = id;
+                document.getElementById('confirmModalTitle').textContent = 'Confirmar Exclusão';
+                document.getElementById('confirmModalMessage').textContent = 'Tem certeza que deseja remover este item do estoque?';
+                confirmModal.classList.remove('hidden');
+            }
+                                    
+            // Delete item
+            document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+                if (itemToDelete) {
+                    const transaction = db.transaction([storeName, movementsStoreName], 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    const movementsStore = transaction.objectStore(movementsStoreName);
+                    
+                    // First delete related movements
+                    const deleteMovementsRequest = movementsStore.index('itemId').openCursor(itemToDelete);
+                    
+                    deleteMovementsRequest.onsuccess = function(event) {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            movementsStore.delete(cursor.primaryKey);
+                            cursor.continue();
+                        } else {
+                            // After deleting movements, delete the item
+                            const deleteItemRequest = store.delete(itemToDelete);
+                            
+                            deleteItemRequest.onsuccess = function() {
+                                loadItems();
+                                loadMovementHistory();
+                                itemToDelete = null;
+                                confirmModal.classList.add('hidden');
+                            };
+                            
+                            deleteItemRequest.onerror = function() {
+                                console.error('Error deleting item:', deleteItemRequest.error);
+                                alert('Erro ao excluir o item.');
+                            };
+                        }
+                    };
+                    
+                    deleteMovementsRequest.onerror = function() {
+                        console.error('Error deleting movements:', deleteMovementsRequest.error);
+                        alert('Erro ao excluir movimentações do item.');
+                    };
+                }
+            });
+                                    
+            // Close modals
+            document.getElementById('closeModalBtn').addEventListener('click', function() {
+                itemModal.classList.add('hidden');
+            });
+            
+            document.getElementById('closeMovementModalBtn').addEventListener('click', function() {
+                movementModal.classList.add('hidden');
+            });
+                                    
+            document.getElementById('closeConfirmModalBtn').addEventListener('click', function() {
+                confirmModal.classList.add('hidden');
+                itemToDelete = null;
+            });
+                                    
+            document.getElementById('cancelBtn').addEventListener('click', function() {
+                itemModal.classList.add('hidden');
+            });
+            
+            document.getElementById('cancelMovementBtn').addEventListener('click', function() {
+                movementModal.classList.add('hidden');
+            });
+                                    
+            document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
+                confirmModal.classList.add('hidden');
+                itemToDelete = null;
+            });
+
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                if (searchTerm) {
+                    const filteredItems = items.filter(item => 
+                        item.name.toLowerCase().includes(searchTerm) ||
+                        item.code.toLowerCase().includes(searchTerm) ||
+                        (item.location && item.location.toLowerCase().includes(searchTerm)) ||
+                        (item.price && item.price.toString().includes(searchTerm))
+                    );
+                    renderItems(filteredItems);
+                } else {
+                    renderItems();
+                }
+            });
+            
+            // Movement history filter toggle
+            filterMovementsBtn.addEventListener('click', function() {
+                movementFilters.classList.toggle('hidden');
+            });
+            
+            // Apply movement filters when changed
+            document.getElementById('filterIn').addEventListener('change', function() {
+                applyMovementFilters();
+            });
+            
+            document.getElementById('filterOut').addEventListener('change', function() {
+                applyMovementFilters();
+            });
+            
+            document.getElementById('filterAdjustments').addEventListener('change', function() {
+                applyMovementFilters();
+            });
+            
+            function applyMovementFilters() {
+                const filters = {
+                    in: document.getElementById('filterIn').checked,
+                    out: document.getElementById('filterOut').checked,
+                    adjustments: document.getElementById('filterAdjustments').checked
+                };
+                
+                loadMovementHistory(filters);
+            }
+                                    
+            // Close modals when clicking outside
+            window.addEventListener('click', function(e) {
+                if (e.target === itemModal) {
+                    itemModal.classList.add('hidden');
+                }
+                if (e.target === movementModal) {
+                    movementModal.classList.add('hidden');
+                }
+                if (e.target === confirmModal) {
+                    confirmModal.classList.add('hidden');
+                    itemToDelete = null;
+                }
+                if (e.target === deleteAllModal) {
+                    deleteAllModal.classList.add('hidden');
+                }
+                if (e.target === csvImportModal) {
+                    csvImportModal.classList.add('hidden');
+                    resetCsvImport();
+                }
+            });
+
+            // CSV Import functionality
+            importCsvBtn.addEventListener('click', function() {
+                csvImportModal.classList.remove('hidden');
+            });
+
+            closeCsvModalBtn.addEventListener('click', function() {
+                csvImportModal.classList.add('hidden');
+                resetCsvImport();
+            });
+
+            cancelCsvImportBtn.addEventListener('click', function() {
+                csvImportModal.classList.add('hidden');
+                resetCsvImport();
+            });
+
+            // Handle CSV file selection
+            csvDropzone.addEventListener('click', function() {
+                csvFileInput.click();
+            });
+
+            csvFileInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    csvFileName.textContent = `Arquivo selecionado: ${file.name}`;
+                    csvFileName.classList.remove('hidden');
+                    
+                    // Read the CSV file
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        parseCsvData(e.target.result);
+                    };
+                    reader.readAsText(file);
+                }
+            });
+
+            // Handle drag and drop for CSV files
+            csvDropzone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                csvDropzone.classList.add('border-blue-500', 'bg-blue-50');
+                csvDropzone.classList.remove('border-gray-300');
+            });
+
+            csvDropzone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                csvDropzone.classList.remove('border-blue-500', 'bg-blue-50');
+                csvDropzone.classList.add('border-gray-300');
+            });
+
+            csvDropzone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                csvDropzone.classList.remove('border-blue-500', 'bg-blue-50');
+                csvDropzone.classList.add('border-gray-300');
+                
+                if (e.dataTransfer.files.length > 0) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.name.endsWith('.csv')) {
+                        csvFileName.textContent = `Arquivo selecionado: ${file.name}`;
+                        csvFileName.classList.remove('hidden');
+                        
+                        // Read the CSV file
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            parseCsvData(e.target.result);
+                        };
+                        reader.readAsText(file);
+                    } else {
+                        alert('Por favor, selecione um arquivo CSV.');
+                    }
+                }
+            });
+
+            // Parse CSV data
+            function parseCsvData(csvString) {
+                const lines = csvString.split('\n');
+                if (lines.length < 2) {
+                    alert('O arquivo CSV deve conter pelo menos uma linha de cabeçalho e uma linha de dados.');
+                    return;
+                }
+                
+                // Get headers (first line)
+                csvHeaders = lines[0].split(',').map(header => header.trim());
+                
+                // Get data rows (skip first line)
+                csvData = [];
+                for (let i = 1; i < lines.length; i++) {
+                    if (lines[i].trim() === '') continue;
+                    
+                    const values = lines[i].split(',');
+                    const row = {};
+                    csvHeaders.forEach((header, index) => {
+                        row[header] = values[index] ? values[index].trim() : '';
+                    });
+                    csvData.push(row);
+                }
+                
+                // Show mapping section
+                csvMappingSection.classList.remove('hidden');
+                
+                // Populate preview table
+                renderCsvPreview();
+                
+                // Populate mapping dropdowns
+                populateMappingDropdowns();
+                
+                // Auto-detect mappings
+                autoDetectMappings();
+            }
+
+            // Render CSV preview
+            function renderCsvPreview() {
+                csvHeadersRow.innerHTML = '';
+                csvPreviewBody.innerHTML = '';
+                
+                // Add headers
+                csvHeaders.forEach(header => {
+                    const th = document.createElement('th');
+                    th.className = 'px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider';
+                    th.textContent = header;
+                    csvHeadersRow.appendChild(th);
+                });
+                
+                // Add sample data (first 5 rows)
+                const sampleData = csvData.slice(0, 5);
+                sampleData.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bg-white dark:bg-gray-800';
+                    
+                    csvHeaders.forEach(header => {
+                        const td = document.createElement('td');
+                        td.className = 'px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300';
+                        td.textContent = row[header] || '';
+                        tr.appendChild(td);
+                    });
+                    
+                    csvPreviewBody.appendChild(tr);
+                });
+            }
+
+            // Populate mapping dropdowns
+            function populateMappingDropdowns() {
+                // Clear existing options
+                nameMapping.innerHTML = '<option value="">Selecione a coluna</option>';
+                codeMapping.innerHTML = '<option value="">Selecione a coluna</option>';
+                quantityMapping.innerHTML = '<option value="">Selecione a coluna</option>';
+                priceMapping.innerHTML = '<option value="">Selecione a coluna</option>';
+                locationMapping.innerHTML = '<option value="">Selecione a coluna</option>';
+                
+                // Add options for each header
+                csvHeaders.forEach(header => {
+                    const option = document.createElement('option');
+                    option.value = header;
+                    option.textContent = header;
+                    
+                    nameMapping.appendChild(option.cloneNode(true));
+                    codeMapping.appendChild(option.cloneNode(true));
+                    quantityMapping.appendChild(option.cloneNode(true));
+                    priceMapping.appendChild(option.cloneNode(true));
+                    locationMapping.appendChild(option.cloneNode(true));
+                });
+            }
+
+            // Auto-detect mappings based on header names
+            function autoDetectMappings() {
+                const headerLower = csvHeaders.map(h => h.toLowerCase());
+                
+                // Try to find name column
+                const nameIndex = headerLower.findIndex(h => 
+                    h.includes('nome') || h.includes('name') || h.includes('item') || h.includes('produto')
+                );
+                if (nameIndex !== -1) {
+                    nameMapping.value = csvHeaders[nameIndex];
+                }
+                
+                // Try to find code column
+                const codeIndex = headerLower.findIndex(h => 
+                    h.includes('código') || h.includes('code') || h.includes('sku') || h.includes('id')
+                );
+                if (codeIndex !== -1) {
+                    codeMapping.value = csvHeaders[codeIndex];
+                }
+                
+                // Try to find quantity column
+                const quantityIndex = headerLower.findIndex(h => 
+                    h.includes('quantidade') || h.includes('quantity') || h.includes('qtd') || h.includes('estoque')
+                );
+                if (quantityIndex !== -1) {
+                    quantityMapping.value = csvHeaders[quantityIndex];
+                }
+                
+                // Try to find price column
+                const priceIndex = headerLower.findIndex(h => 
+                    h.includes('preço') || h.includes('price') || h.includes('valor') || h.includes('value')
+                );
+                if (priceIndex !== -1) {
+                    priceMapping.value = csvHeaders[priceIndex];
+                }
+                
+                // Try to find location column
+                const locationIndex = headerLower.findIndex(h => 
+                    h.includes('localização') || h.includes('location') || h.includes('local') || h.includes('prateleira')
+                );
+                if (locationIndex !== -1) {
+                    locationMapping.value = csvHeaders[locationIndex];
+                }
+            }
+
+            // Confirm CSV import
+            confirmCsvImportBtn.addEventListener('click', function() {
+                if (!nameMapping.value || !codeMapping.value || !quantityMapping.value) {
+                    alert('Por favor, mapeie pelo menos as colunas Nome, Código e Quantidade.');
+                    return;
+                }
+                
+                const transaction = db.transaction([storeName, movementsStoreName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const movementsStore = transaction.objectStore(movementsStoreName);
+                
+                let importedCount = 0;
+                let errorCount = 0;
+                
+                // Process each row
+                csvData.forEach(row => {
+                    const name = row[nameMapping.value] || '';
+                    const code = row[codeMapping.value] || '';
+                    const quantity = parseInt(row[quantityMapping.value]) || 0;
+                    const price = parseFloat(row[priceMapping.value]) || 0;
+                    const location = row[locationMapping.value] || '';
+                    
+                    if (name && code && !isNaN(quantity)) {
+                        const itemData = {
+                            name,
+                            code,
+                            quantity,
+                            price,
+                            location: location || null,
+                            userId: currentUser.email
+                        };
+                        
+                        const addRequest = store.add(itemData);
+                        
+                        addRequest.onerror = function() {
+                            errorCount++;
+                        };
+                        
+                        addRequest.onsuccess = function(e) {
+                            importedCount++;
+                            
+                            // Record the initial inventory as a movement
+                            const movementData = {
+                                itemId: e.target.result,
+                                type: 'in',
+                                quantity: quantity,
+                                notes: 'Importação inicial via CSV',
+                                date: new Date().toISOString(),
+                                userId: currentUser.email
+                            };
+                            
+                            movementsStore.add(movementData);
+                        };
+                    } else {
+                        errorCount++;
+                    }
+                });
+                
+                transaction.oncomplete = function() {
+                    csvImportModal.classList.add('hidden');
+                    resetCsvImport();
+                    loadItems();
+                    loadMovementHistory();
+                    
+                    if (errorCount > 0) {
+                        alert(`Importação concluída com ${importedCount} itens importados e ${errorCount} erros.`);
+                    } else {
+                        alert(`Importação concluída com sucesso! ${importedCount} itens adicionados.`);
+                    }
+                };
+            });
+
+            // Reset CSV import form
+            function resetCsvImport() {
+                csvFileInput.value = '';
+                csvFileName.classList.add('hidden');
+                csvMappingSection.classList.add('hidden');
+                csvData = null;
+                csvHeaders = [];
+                
+                csvHeadersRow.innerHTML = '';
+                csvPreviewBody.innerHTML = '';
+                nameMapping.value = '';
+                codeMapping.value = '';
+                quantityMapping.value = '';
+                priceMapping.value = '';
+                locationMapping.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
